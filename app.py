@@ -1,25 +1,33 @@
 from flask import Flask, request, jsonify
-from text_extractor import extract_text_from_image
-import tempfile
+import requests
 
 app = Flask(__name__)
 
+OCR_SPACE_API_KEY = "helloworld"  # You can use this free key for testing
+OCR_URL = "https://api.ocr.space/parse/image"
+
 @app.route('/')
 def home():
-    return jsonify({"message": "Historical Document OCR API is running!"})
+    return {"message": "Historical Document OCR API is running!"}
 
 @app.route('/analyze', methods=['POST'])
-def analyze():
+def analyze_document():
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
+    
+    image_file = request.files['image']
 
-    # Save uploaded file temporarily
-    file = request.files['image']
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp:
-        file.save(temp.name)
-        text = extract_text_from_image(temp.name)
+    # Send image to OCR.Space API
+    payload = {"apikey": OCR_SPACE_API_KEY, "language": "eng"}
+    response = requests.post(OCR_URL, files={"file": image_file}, data=payload)
 
-    return jsonify({"extracted_text": text})
+    result = response.json()
+    try:
+        extracted_text = result["ParsedResults"][0]["ParsedText"]
+    except Exception:
+        return jsonify({"error": "OCR failed", "details": result}), 500
+
+    return jsonify({"text": extracted_text})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
