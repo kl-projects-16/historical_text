@@ -1,4 +1,4 @@
-from flask import Flask, requests, jsonify
+from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
@@ -12,10 +12,10 @@ def home():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_document():
-    if 'image' not in requests.files:
+    if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
     
-    image_file = requests.files['image']
+    image_file = request.files['image']
 
     # Send image to OCR.Space API
     payload = {"apikey": OCR_SPACE_API_KEY, "language": "eng"}
